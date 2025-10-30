@@ -2,9 +2,7 @@ package src.pas.othello.agents;
 
 
 // SYSTEM IMPORTS
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*; 
 
 
 // JAVA PROJECT IMPORTS
@@ -86,7 +84,53 @@ public class OthelloAgent
         public List<Node> getChildren()
         {
             // TODO: complete me!
-            return null;
+            List<Node> children = new ArrayList<>();
+            if(isTerminal())
+                return children;
+            final Game.GameView view = getGameView();
+            final PlayerType current = getCurrentPlayerType();
+            final PlayerType opponent;
+            Set<Coordinate> legalMoves = view.getFrontier(current);
+
+            if(current == PlayerType.BLACK)
+            {
+                opponent = PlayerType.WHITE;
+            }
+            else
+            {
+                opponent = PlayerType.BLACK;
+            }
+
+            // If there are legal moves, create one child per move
+            if(legalMoves!=null && !legalMoves.isEmpty())
+            {
+                for(Coordinate move: legalMoves)
+                {
+                    edu.bu.pas.othello.game.Game newGame = new edu.bu.pas.othello.game.Game(view);
+                    newGame.applyMove(move);
+
+                    OthelloNode child = new OthelloNode(getMaxPlayerType(), newGame.getView(), getDepth() + 1);
+                    child.setLastMove(move);
+                    children.add(child);
+                }
+                return children;
+            }
+
+            // If current player has no legal moves, check if opponent also has none
+            Set<Coordinate> oppLegalMoves = view.getFrontier(opponent);
+            if(oppLegalMoves==null || oppLegalMoves.isEmpty())
+            {
+                return children;
+            }
+
+            // Otherwise player must pass 
+            Game passGame = new Game(view);
+            passGame.setCurrentPlayerType(opponent);
+            OthelloNode passChild = new OthelloNode(getMaxPlayerType(), passGame.getView(), getDepth() + 1);
+            passChild.setLastMove(null);
+            children.add(passChild);
+
+            return children;
         }
     }
 
