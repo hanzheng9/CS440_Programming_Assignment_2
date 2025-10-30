@@ -14,6 +14,7 @@ import edu.bu.pas.othello.game.Game.GameView;
 import edu.bu.pas.othello.game.PlayerType;
 import edu.bu.pas.othello.traversal.Node;
 import edu.bu.pas.othello.utils.Coordinate;
+import edu.bu.pas.othello.game.Game;  
 
 
 public class OthelloAgent
@@ -34,7 +35,51 @@ public class OthelloAgent
         public double getTerminalUtility()
         {
             // TODO: complete me!
-            return 0d;
+            if(!isTerminal()) 
+                return 0.0;
+
+            final double temp = 100.0; 
+            final Game.GameView view = getGameView();
+            final PlayerType max = getMaxPlayerType();
+            final PlayerType min;
+            int maxCount = 0; 
+            int minCount = 0;
+            PlayerType[][] cells = view.getCells();
+
+            if(max==PlayerType.BLACK)
+            {
+                min = PlayerType.WHITE;
+            } 
+            else 
+            {
+                min = PlayerType.BLACK;
+            }
+
+            for(int y=0; y<cells.length; y++) 
+            {
+                for(int x=0; x<cells[y].length; x++) 
+                {
+                    PlayerType tile = cells[y][x]; // tile = who owns the tile essentially
+                    if(tile==max) 
+                    {
+                        maxCount++;
+                    } 
+                    else if(tile==min) 
+                    {
+                        minCount++;
+                    }
+                }
+            }
+
+            if(maxCount==minCount) 
+                return 0.0;
+
+            if((maxCount-minCount)/64.0<-1.0)
+                return -1.0 * temp;
+            else if((maxCount-minCount)/64.0>1.0)
+                return  1.0 * temp;
+            else
+                return((maxCount-minCount)/64.0) * temp;
         }
 
         @Override
