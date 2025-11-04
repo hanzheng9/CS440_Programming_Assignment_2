@@ -106,7 +106,7 @@ public class OthelloAgent
             {
                 for(Coordinate move: legalMoves)
                 {
-                    edu.bu.pas.othello.game.Game newGame = new edu.bu.pas.othello.game.Game(view);
+                    Game newGame = new Game(view);
                     newGame.applyMove(move);
 
                     OthelloNode child = new OthelloNode(getMaxPlayerType(), newGame.getView(), getDepth() + 1);
