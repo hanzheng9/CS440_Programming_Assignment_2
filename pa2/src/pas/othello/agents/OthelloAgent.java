@@ -85,12 +85,11 @@ public class OthelloAgent
         {
             // TODO: complete me!
             List<Node> children = new ArrayList<>();
-            if(isTerminal())
-                return children;
+            // if(isTerminal())
+            //     return children;
             final Game.GameView view = getGameView();
             final PlayerType current = getCurrentPlayerType();
             final PlayerType opponent;
-            Set<Coordinate> legalMoves = view.getFrontier(current);
 
             if(current == PlayerType.BLACK)
             {
@@ -101,14 +100,22 @@ public class OthelloAgent
                 opponent = PlayerType.BLACK;
             }
 
+            Game curGame = new Game(view);
+            curGame.setCurrentPlayerType(current);
+            curGame.calculateFrontiers();
+            Set<Coordinate> legalMoves = curGame.getFrontier(current);
+
             // If there are legal moves, create one child per move
             if(legalMoves!=null && !legalMoves.isEmpty())
             {
                 for(Coordinate move: legalMoves)
                 {
                     Game newGame = new Game(view);
-                    newGame.applyMove(move);
 
+                    newGame.applyMove(move);
+                    newGame.setCurrentPlayerType(opponent);  
+                    newGame.setTurnNumber(view.getTurnNumber() + 1);
+                    newGame.calculateFrontiers();  
                     OthelloNode child = new OthelloNode(getMaxPlayerType(), newGame.getView(), getDepth() + 1);
                     child.setLastMove(move);
                     children.add(child);
@@ -117,15 +124,20 @@ public class OthelloAgent
             }
 
             // If current player has no legal moves, check if opponent also has none
-            Set<Coordinate> oppLegalMoves = view.getFrontier(opponent);
-            if(oppLegalMoves==null || oppLegalMoves.isEmpty())
-            {
-                return children;
-            }
+            // Game checkGame = new Game(view);               
+            // checkGame.setCurrentPlayerType(opponent);
+            // checkGame.calculateFrontiers();  
+            // Set<Coordinate> oppLegalMoves = checkGame.getFrontier(opponent);
+            // if(oppLegalMoves==null || oppLegalMoves.isEmpty())
+            // {
+            //     return children;
+            // }
 
             // Otherwise player must pass 
             Game passGame = new Game(view);
             passGame.setCurrentPlayerType(opponent);
+            passGame.setTurnNumber(view.getTurnNumber() + 1); 
+            passGame.calculateFrontiers();  
             OthelloNode passChild = new OthelloNode(getMaxPlayerType(), passGame.getView(), getDepth() + 1);
             passChild.setLastMove(null);
             children.add(passChild);
