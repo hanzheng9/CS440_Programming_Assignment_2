@@ -162,7 +162,7 @@ public class OthelloAgent
     public Node treeSearch(Node n)
     {
         // TODO: complete me!
-        List<Node> rootChildren = root.getChildren();
+        List<Node> rootChildren = n.getChildren();
         if(rootChildren==null || rootChildren.isEmpty()) 
         {
             return n;
