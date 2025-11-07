@@ -12,6 +12,7 @@ import edu.bu.pas.othello.game.Game.GameView;
 import edu.bu.pas.othello.game.PlayerType;
 import edu.bu.pas.othello.traversal.Node;
 import edu.bu.pas.othello.utils.Coordinate;
+import src.pas.othello.heuristics.Heuristics;
 import edu.bu.pas.othello.game.Game;  
 
 
@@ -36,7 +37,7 @@ public class OthelloAgent
             if(!isTerminal()) 
                 return 0.0;
 
-            final double temp = 100.0; 
+            final double temp = 1000.0; 
             final Game.GameView view = getGameView();
             final PlayerType max = getMaxPlayerType();
             final PlayerType min;
@@ -85,8 +86,6 @@ public class OthelloAgent
         {
             // TODO: complete me!
             List<Node> children = new ArrayList<>();
-            // if(isTerminal())
-            //     return children;
             final Game.GameView view = getGameView();
             final PlayerType current = getCurrentPlayerType();
             final PlayerType opponent;
@@ -123,16 +122,6 @@ public class OthelloAgent
                 return children;
             }
 
-            // If current player has no legal moves, check if opponent also has none
-            // Game checkGame = new Game(view);               
-            // checkGame.setCurrentPlayerType(opponent);
-            // checkGame.calculateFrontiers();  
-            // Set<Coordinate> oppLegalMoves = checkGame.getFrontier(opponent);
-            // if(oppLegalMoves==null || oppLegalMoves.isEmpty())
-            // {
-            //     return children;
-            // }
-
             // Otherwise player must pass 
             Game passGame = new Game(view);
             passGame.setCurrentPlayerType(opponent);
@@ -164,14 +153,107 @@ public class OthelloAgent
         // if you change OthelloNode's constructor, you will want to change this!
         // Note: I am starting the initial depth at 0 (because I like to count up)
         //       change this if you want to count depth differently
-        return new OthelloNode(this.getMyPlayerType(), game, 0);
+        PlayerType myPlayer = this.getMyPlayerType();
+        OthelloNode rootNode = new OthelloNode(myPlayer, game, 0);
+        return rootNode;
     }
 
     @Override
     public Node treeSearch(Node n)
     {
         // TODO: complete me!
-        return null;
+        List<Node> rootChildren = root.getChildren();
+        if(rootChildren==null || rootChildren.isEmpty()) 
+        {
+            return n;
+        }
+        final int DEPTH_LIMIT = 3; 
+        final long deadline = System.currentTimeMillis() + Math.max(0L, this.getMaxThinkingTimeInMS() - 5L); // for timeout purposes
+        double bestValue = Double.NEGATIVE_INFINITY;
+        Node bestChild = rootChildren.get(0);
+
+        for(Node child: rootChildren) 
+        {
+            double value = alphaBeta(child, DEPTH_LIMIT, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, false, deadline);
+            child.setUtilityValue(value);
+
+            if(value>bestValue) 
+            {
+                bestValue = value;
+                bestChild = child;
+            }
+        }
+
+        return bestChild;
+    }
+
+    private double alphaBeta(Node node, int depth, double alpha, double beta, boolean maximizing, long deadline) 
+    {
+        if(System.currentTimeMillis()>=deadline) // timeout concerns
+        {
+            double temp = Heuristics.calculateHeuristicValue(node);
+            node.setUtilityValue(temp);
+            return temp;
+        }
+        if(node.isTerminal() || depth<=0) 
+        {
+            double val;
+
+            if(node.isTerminal()) 
+            {
+                val = node.getTerminalUtility();
+            } 
+            else 
+            {
+                val = Heuristics.calculateHeuristicValue(node);
+            }
+
+            node.setUtilityValue(val);
+
+            return val;
+        }
+        List<Node> children = node.getChildren();
+        if(children==null || children.isEmpty()) 
+        {
+            double temp = Heuristics.calculateHeuristicValue(node);
+            node.setUtilityValue(temp);
+            return temp;
+        }
+
+        if(maximizing) 
+        {
+            double value = Double.NEGATIVE_INFINITY;
+
+            for(Node child: children) 
+            {
+                double v = alphaBeta(child, depth - 1, alpha, beta, false, deadline);
+                value = Math.max(value, v);
+                alpha = Math.max(alpha, value);
+
+                if(beta<=alpha) 
+                    break;
+            }
+            node.setUtilityValue(value);
+
+            return value;
+        } 
+        else 
+        {
+            double value = Double.POSITIVE_INFINITY;
+
+            for(Node child: children) 
+            {
+                double v = alphaBeta(child, depth - 1, alpha, beta, true, deadline);
+                value = Math.min(value, v);
+                beta = Math.min(beta, value);
+
+                if(beta<=alpha) 
+                    break;
+            }
+            node.setUtilityValue(value);
+
+            return value;
+        }
     }
 
     @Override
