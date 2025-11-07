@@ -38,6 +38,11 @@ public class Heuristics
         double oppLegal = 0;
 
 
+        double playerStable = 0;
+        double oppStable = 0;
+
+        double playerEdge =0;
+        double oppEdge = 0;
         
 
             if(player==PlayerType.BLACK)
@@ -54,7 +59,7 @@ public class Heuristics
 
 
             Set<Coordinate> oppLegalMoves = game.getFrontier(opp);
-            oppLegal = platerLegalMoves.size() * 1.0;
+            oppLegal = oppLegalMoves.size() * 1.0;
             for(int y=0; y<cells.length; y++) 
             {
                 for(int x=0; x<cells[y].length; x++) 
@@ -89,7 +94,7 @@ public class Heuristics
                     }
 
                     }
-                    if((x == cells.length - 1 && y ==0) ||(x == cells.length - 2 && y ==1) ||(x== cells.length && y ==1)){
+                    if((x == cells.length - 2 && y == 0 ) ||(x == cells.length - 2 && y ==1) ||(x== cells.length -1 && y ==1)){
                         
                     if(tile==player) 
                     {
@@ -101,7 +106,7 @@ public class Heuristics
                     }
 
                     }
-                    if((x == 0 && y == cells.length - 1) ||(x == 1 && y == cells.length - 2) ||(x== 1 && y ==cells.length - 1)){
+                    if((x == 0 && y == cells.length - 2) ||(x == 1 && y == cells.length - 2) ||(x== 1 && y ==cells.length - 1)){
                         
                     if(tile==player) 
                     {
@@ -113,7 +118,7 @@ public class Heuristics
                     }
 
                     }
-                     if((x == cells.length - 2 && y == cells.length - 2) ||(x == cells.length - 1 && y == cells.length - 2) ||(x== cells.length - 2&& y ==cells.length - 1)){
+                     if((x == cells.length - 2 && y == cells.length - 2) ||(x == cells.length - 1 && y == cells.length - 2) ||(x== cells.length - 2 && y ==cells.length - 1)){
                         
                     if(tile==player) 
                     {
@@ -127,7 +132,7 @@ public class Heuristics
                     }
                 }
 
-                    
+                    //counts tile of each player
                     if(tile==player) 
                     {
                         playerCount++;
@@ -136,27 +141,101 @@ public class Heuristics
                     {
                         oppCount++;
                     }
+                    //gets stable tiles 
+                    if(true){
+                    boolean stable = false;
+                    if(x == 0 || x == cells.length - 1) {                   
+                        boolean sameEdge = true;
+                        for(int yy = 0; yy < cells.length; yy++) {
+                            if(cells[yy][x] != tile) {
+                                sameEdge = false;
+                                    break;
+                            }
+                        }
+                            if(sameEdge) stable = true;
+                        } 
+                    else if(y == 0 || y == cells.length - 1) {
+                        boolean sameEdge = true;
+                        for(int xx = 0; xx < cells.length; xx++) {
+                            if(cells[y][xx] != tile) {
+                                sameEdge = false;
+                                break;
+                            }
+                        }
+                        if(sameEdge) stable = true;
+                        }
+                    if(stable) {
+                        if(tile == player) {
+                            playerStable++;
+                        }else if(tile == opp) {
+                            oppStable++;
+                        }
+}
+
+                    }
+                    //gets edges
+                    if(true){
+                        if(x == 0 && (y != 0 || y != cells.length - 1)){
+                            if(tile == player){
+                                playerEdge ++;
+                            }else{
+                                oppEdge ++;
+                            }
+                        }
+                        if(x == cells.length - 1 && (y != 0 || y != cells.length - 1)){
+                            if(tile == player){
+                                playerEdge ++;
+                            }else{
+                                oppEdge ++;
+                            }
+                        }
+                        if((x != 0 || x != cells.length - 1) && y == 0){
+                            if(tile == player){
+                                playerEdge ++;
+                            }else{
+                                oppEdge ++;
+                            }
+                        }
+                        if((x != 0 || x != cells.length - 1) && y == cells.length - 1){
+                            if(tile == player){
+                                playerEdge ++;
+                            }else{
+                                oppEdge ++;
+                            }
+                        }
+                    }
                 }
+
             }
         //does a simple difference, might not take into account relative advantage
         heuristics += playerCount - oppCount;
 
 
         // scales better as game goes on
-        heuristics += ((double) playerCount / (playerCount + oppCount)) * node.getGameView().getTurnNumber();
+        heuristics += ((playerCount - oppCount) / (playerCount + oppCount)) * 10.0;
 
         //deals with corners
-        heuristics += 10 * playerCorners;
-        heuristics -= 10 * oppCorners;
+        heuristics += 25 * playerCorners;
+        heuristics -= 25 * oppCorners;
 
-        heuristics += 4.5 * playerNear;
-        heuristics -= 4.5 * oppNear;
+        //remeber swtiched to near corners is bad, just to lazy to fix
+        heuristics += 12 * playerNear;
+        heuristics -= 12 * oppNear;
 
         //legal moves
         heuristics += playerLegal;
         heuristics += oppLegal;
 
-        if(heuristics >= 100)heuristics = 99;
+        //stable
+         heuristics += 25 * playerStable;
+        heuristics -= 25 * oppStable;
+
+        //edges 
+        heuristics += 5 * playerEdge;
+        heuristics += 5 * oppEdge;
+
+        //incase heuristics is bigger than 100, it will have a better herustic than a victory
+        if(heuristics >= 1000)heuristics = 999;
 
         return heuristics;
     }
