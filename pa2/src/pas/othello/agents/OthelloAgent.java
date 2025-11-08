@@ -167,13 +167,17 @@ public class OthelloAgent
         {
             return n;
         }
-        final int DEPTH_LIMIT = 3; 
-        final long deadline = System.currentTimeMillis() + Math.max(0L, this.getMaxThinkingTimeInMS() - 5L); // for timeout purposes
+        final int DEPTH_LIMIT = 2; 
+        final long deadline = System.currentTimeMillis() + Math.max(0L, this.getMaxThinkingTimeInMS() - 10L); // for timeout purposes
         double bestValue = Double.NEGATIVE_INFINITY;
         Node bestChild = rootChildren.get(0);
 
         for(Node child: rootChildren) 
         {
+            if(System.currentTimeMillis()>=deadline) // timeout concerns
+            {
+                break;
+            }
             double value = alphaBeta(child, DEPTH_LIMIT, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, false, deadline);
             child.setUtilityValue(value);
 
@@ -183,13 +187,14 @@ public class OthelloAgent
                 bestChild = child;
             }
         }
+        n.setUtilityValue(bestChild.getUtilityValue());
 
         return bestChild;
     }
 
     private double alphaBeta(Node node, int depth, double alpha, double beta, boolean maximizing, long deadline) 
     {
-        if(System.currentTimeMillis()>=deadline) // timeout concerns
+        if(System.currentTimeMillis()>=deadline) 
         {
             double temp = Heuristics.calculateHeuristicValue(node);
             node.setUtilityValue(temp);
@@ -210,49 +215,114 @@ public class OthelloAgent
 
             node.setUtilityValue(val);
 
-            return val;
+            return node.getUtilityValue();
         }
         List<Node> children = node.getChildren();
         if(children==null || children.isEmpty()) 
         {
             double temp = Heuristics.calculateHeuristicValue(node);
             node.setUtilityValue(temp);
-            return temp;
+            return node.getUtilityValue();
         }
 
         if(maximizing) 
         {
             double value = Double.NEGATIVE_INFINITY;
+            boolean sawChild = false;
+            Node bestChild = null;
 
             for(Node child: children) 
             {
+                if(System.currentTimeMillis()>=deadline && sawChild) // timeout concerns
+                {
+                    break;
+                }
                 double v = alphaBeta(child, depth - 1, alpha, beta, false, deadline);
-                value = Math.max(value, v);
+                child.setUtilityValue(v); 
+                if(v>value)
+                {          
+                    value = v;
+                    bestChild = child;
+                }
                 alpha = Math.max(alpha, value);
+                sawChild = true;
 
                 if(beta<=alpha) 
                     break;
             }
-            node.setUtilityValue(value);
+            if(!sawChild) 
+            {
+                for(Node child: children) 
+                {
+                    double temp = Heuristics.calculateHeuristicValue(child);
+                    child.setUtilityValue(temp);
+                    if(temp>value) 
+                    {    
+                        value = temp;
+                        bestChild = child;
+                    }
+                }
+            }
+            if(bestChild!=null) 
+            {
+                node.setUtilityValue(bestChild.getUtilityValue());
+            } 
+            else 
+            {
+                node.setUtilityValue(value);
+            }
 
-            return value;
+            return node.getUtilityValue();
         } 
         else 
         {
             double value = Double.POSITIVE_INFINITY;
+            boolean sawChild = false;
+            Node bestChild = null;
 
             for(Node child: children) 
             {
+                if(System.currentTimeMillis()>=deadline && sawChild) // timeout concerns
+                {
+                    break;
+                }
                 double v = alphaBeta(child, depth - 1, alpha, beta, true, deadline);
-                value = Math.min(value, v);
+                child.setUtilityValue(v); 
+                if(v<value)
+                {          
+                    value = v;
+                    bestChild = child;
+                }
                 beta = Math.min(beta, value);
+                sawChild = true;
 
                 if(beta<=alpha) 
                     break;
             }
-            node.setUtilityValue(value);
 
-            return value;
+            if(!sawChild)
+            {
+                for(Node child: children) 
+                {
+                    double temp = Heuristics.calculateHeuristicValue(child);
+                    child.setUtilityValue(temp);
+                    if(temp<value) 
+                    {    
+                        value = temp;
+                        bestChild = child;
+                    }
+                }
+            }
+            if(bestChild!=null) 
+            {
+                node.setUtilityValue(bestChild.getUtilityValue());
+            } 
+            else 
+            {
+                node.setUtilityValue(value);
+            }
+
+            return node.getUtilityValue();
         }
     }
 
